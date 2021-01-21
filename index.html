@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+	<title>Advanced Chat</title>
+	<meta charset="utf-8"  />
+</head>
+
+<body>
+    <!-- The core Firebase JS SDK is always required and must be listed first -->
+    <script src="https://www.gstatic.com/firebasejs/8.2.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.2.1/firebase-firestore.js"></script>
+
+    <h1>Advanced Chat 2.0 <span id=roomTitle></span></h1>
+    <ul>
+        <li>Type any text to send a message, or</li>
+        <li>Type /giphy into the message box to send a random gif (e.g. /giphy cat)</li>
+        <li>Click Send or hit Enter to send message.</li>
+        <li>Choose a room about a specific topic</li>
+    </ul>
+
+    <label>Username:</label>
+    <input type="text" id="username" placeholder="Rick">
+    
+    <label>Message:</label>
+    <input type="text" id="message" placeholder="Hi Morty">
+    
+    <button id="send">Send</button>
+    <h2></h2>
+    <label>Choose a room:</label>
+    <input type="text" id="room"> 
+    <button id ="roomButton">Enter</button>
+    
+    <h3>Chat Messages:</h3>
+
+    <div id="messagesContainer">
+        <!-- We will display any messages here that we send/retrieve from Firestore -->
+    </div>
+
+     <script>
+
+        // Initialize Firebase and Firestore
+        // ---------------------------------------
+
+        // Your web app's Firebase configuration
+        var firebaseConfig = {
+                apiKey: "AIzaSyB27cQILthfLSDQnLLh7Gpc6X3AlAmDc6w",
+                authDomain: "web-dev-01ej.firebaseapp.com",
+                projectId: "web-dev-01ej",
+                storageBucket: "web-dev-01ej.appspot.com",
+                messagingSenderId: "87479058264",
+                appId: "1:87479058264:web:bd2e5c9e4f2ec85f9b2f2d"
+            }
+
+        // Initialize our application
+        firebase.initializeApp(firebaseConfig);
+        var firestore = firebase.firestore();
+        //var collect= "messages"
+        //window.location.search= "?room="+ collect
+
+        var collectionRef = firestore.collection(window.location.search.replace("?room=","") ||  "messages") ;
+
+        // Inputs
+        var inputUsername = document.getElementById("username")
+        var inputMessage = document.getElementById("message")
+        var sendButton = document.getElementById("send")
+        var roomChangerInput = document.getElementById("room")
+        var roomChangerButton = document.getElementById("roomButton")
+
+
+        // Output DIV
+        var messagesContainer = document.getElementById("messagesContainer")
+
+        // Check if Giphy
+        var textToSave=inputMessage.value ;
+        var username=inputUsername.value ; 
+        // Giphy API
+        var apiKey = 'ms3ITSkNLkYJLSAo3oMf3IVZy1PhwBuP'
+        var base_url = 'https://api.giphy.com/v1/gifs/random?api_key=' + apiKey + '&rating=g&lang=en&tag='
+
+        // Save Message
+        function savemessage(username, textToSave,gifURL){
+            
+            collectionRef.add({
+                    username: username,
+                    txt: textToSave,
+                    timestamp: Date.now(),
+                    giphyURL: gifURL
+                    })
+                    .then(() => {
+                        console.log("Message Saved!");
+                    }).catch((error) => {
+                            console.log("Got and error:", error);
+                }); 
+            }
+        // Add an event listener to our button that adds a new message to our firestore collection
+        sendButton.addEventListener("click", sendFunction())
+        
+        function sendFunction() {
+                var username = inputUsername.value;
+                var textToSave = inputMessage.value;
+
+                if(textToSave.indexOf('/giphy')===0){
+                    console.log("Message has giphy command!")
+                    var topic = textToSave.substring(7) 
+                    console.log("found topic:" + topic)
+                    
+                    var url = base_url+ encodeURI(topic)
+                    
+                    fetch(url)
+                    .then((res) => res.json())
+                    .then((data)=>{
+                        var gifURL=data.data.image_url 
+                        savemessage(username,textToSave,gifURL);                       
+                    })
+                    
+                } else{
+                    savemessage(username,textToSave,false) 
+                }
+            }
+            // send message when ENTER clicked 
+            inputMessage.addEventListener("keyup", function(event){
+                if(event.keyCode===13){
+                if(inputMessage != null && inputMessage != ' '){
+                    sendFunction() 
+                }}
+            })
+            // Add Room Changer
+            roomChangerButton.addEventListener("click", () => {
+                var roomId = roomChangerInput.value                
+                var newLocation = window.location.href.split("?")[0] + '?room=' + roomId 
+
+                var popup = window.open(newLocation);
+                popup.onload = function () {
+                popup.document.title = "Advanced Chat-"+ roomId ;
+                }
+                document.getElementById("roomTitle").innerHTML = ' - Room "' +roomId +'"'
+                //document.title="Advanced Chat- "+ roomId
+            });
+
+        // Define a function to listen for real-time updates
+        var getRealTimeUpdates = () => {
+            
+            // All documents in our collection, messages, ordered from oldest to newest
+            var collectionQuery = collectionRef.orderBy('timestamp', 'asc')
+
+            collectionQuery.onSnapshot((snapshot) => {
+                console.log(snapshot)
+                
+                snapshot.docChanges().forEach((docChange) => {
+
+                    // Log the document change we detected
+                    console.log(docChange)
+
+                    // get the data for this document
+                    var data = docChange.doc.data()
+
+                    //
+                    if (data.giphyURL){
+                        var div = document.createElement("div")
+                        div.innerHTML= data.username +':'
+
+                        var img = document.createElement("img")
+                        img.src =data.giphyURL
+                        div.appendChild(img)
+                        messagesContainer.appendChild(div);
+                    } else {
+                        var div = document.createElement("div");   // Create a new <div> element
+                        div.innerHTML = data.username + ": " + data.txt; // Insert text for our username and message
+                        messagesContainer.appendChild(div);
+
+                    }                   
+                                        
+                });
+            });
+        }
+
+        // Call our function to start listening for real-time updates
+        getRealTimeUpdates();
+
+      </script>
+</body>
+</html>
