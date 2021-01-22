@@ -1,41 +1,54 @@
 <!DOCTYPE html>
 <html>
+    <style>
+        
+        #header{
+            position: fixed;
+        }
+        #MessageArea{
+            position: absolute;
+            height: 300px ;
+            overflow:auto;
+
+        }
+    </style>
 
 <head>
 	<title>Advanced Chat</title>
 	<meta charset="utf-8"  />
 </head>
 
-<body>
+<body style="background-color: aqua;">
     <!-- The core Firebase JS SDK is always required and must be listed first -->
     <script src="https://www.gstatic.com/firebasejs/8.2.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.2.1/firebase-firestore.js"></script>
+    <div > 
+    <div class="#header">
+        <h1>Advanced Chat<span id=roomTitle></span></h1>
+        <ul>
+            <li>Type any text to send a message, or</li>
+            <li>Type /giphy into the message box to send a random gif (e.g. /giphy cat)</li>
+            <li>Click Send or hit Enter to send message.</li>
+            <li>Choose a room about a specific topic</li>
+        </ul>
 
-    <h1>Advanced Chat 2.0 <span id=roomTitle></span></h1>
-    <ul>
-        <li>Type any text to send a message, or</li>
-        <li>Type /giphy into the message box to send a random gif (e.g. /giphy cat)</li>
-        <li>Click Send or hit Enter to send message.</li>
-        <li>Choose a room about a specific topic</li>
-    </ul>
-
-    <label>Username:</label>
-    <input type="text" id="username" placeholder="Rick">
-    
-    <label>Message:</label>
-    <input type="text" id="message" placeholder="Hi Morty">
-    
-    <button id="send">Send</button>
-    <h2></h2>
-    <label>Choose a room:</label>
-    <input type="text" id="room"> 
-    <button id ="roomButton">Enter</button>
-    
-    <h3>Chat Messages:</h3>
-
-    <div id="messagesContainer">
-        <!-- We will display any messages here that we send/retrieve from Firestore -->
+        <label>Username:</label>
+        <input type="text" id="username" placeholder="Rick">
+        
+        <label>Message:</label>
+        <input type="text" id="message" placeholder="Hi Morty">
+        
+        <button id="send">Send</button>
+        <h2></h2>
+        <label>Choose a room:</label>
+        <input type="text" id="room"> 
+        <button id ="roomButton">Enter</button>
+        
+        <h3>Chat Messages:</h3>
     </div>
+    <div id="messagesContainer" class="#MessageArea"> </div>
+    </div>
+
 
      <script>
 
@@ -92,7 +105,7 @@
                     }).catch((error) => {
                             console.log("Got and error:", error);
                 }); 
-            }
+        }
         // Add an event listener to our button that adds a new message to our firestore collection
         sendButton.addEventListener("click", sendFunction())
         
@@ -117,7 +130,10 @@
                 } else{
                     savemessage(username,textToSave,false) 
                 }
-            }
+                var scroll = document.getElementById('messagesContainer');
+                 scroll.scrollTop = scroll.scrollHeight;
+                scroll.animate({scrollTop: scroll.scrollHeight});
+         }
             // send message when ENTER clicked 
             inputMessage.addEventListener("keyup", function(event){
                 if(event.keyCode===13){
@@ -130,13 +146,14 @@
                 var roomId = roomChangerInput.value                
                 var newLocation = window.location.href.split("?")[0] + '?room=' + roomId 
 
-                var popup = window.open(newLocation);
-                popup.onload = function () {
-                popup.document.title = "Advanced Chat-"+ roomId ;
-                }
-                document.getElementById("roomTitle").innerHTML = ' - Room "' +roomId +'"'
-                //document.title="Advanced Chat- "+ roomId
-            });
+                var popup = window.open(newLocation)
+                // change title of popup tab
+                setTimeout(function pop(){
+                    popup.document.title ="Advanced Chat- "+ roomId
+                    popup.document.getElementById("roomTitle").innerHTML = ' - Room '+ roomId
+                }, 3000)
+            })
+                
 
         // Define a function to listen for real-time updates
         var getRealTimeUpdates = () => {
@@ -170,13 +187,13 @@
                         messagesContainer.appendChild(div);
 
                     }                   
-                                        
+                    //document.getElementById('messagesContainer').scrollTop(1000000);                
                 });
             });
         }
 
         // Call our function to start listening for real-time updates
-        getRealTimeUpdates();
+        getRealTimeUpdates()
 
       </script>
 </body>
